@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clawd's Birthday</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#E8E5E0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:'Courier New',monospace;overflow:hidden}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+  .info{color:#999;font-size:11px;margin-top:10px;letter-spacing:1px}
+</style>
+</head>
+<body>
+<canvas id="c" width="720" height="720"></canvas>
+<div class="info" id="info"></div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+
+const P={
+  bg:'#F9F7F4',dot:'#E0DDD8',
+  sd:'#333',sm:'#888',sl:'#BBB',
+  body:'#CD6E58',bodyDark:'#B85E4A',eye:'#000',
+  w:'#FFF',blush:'#FAC8D8',pink:'#F06090',pinkDeep:'#C84060',
+  cakeBody:'#DCA540',cakeLight:'#F0D878',cakeDark:'#B88020',
+  candle:'#9C5090',flameO:'#E86030',flameY:'#F8C840',
+};
+
+const PX=20,GW=36,GH=36;
+function px(x,y,c){ctx.fillStyle=c;ctx.fillRect(x*PX,y*PX,PX,PX)}
+
+const BODY=[
+  [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,0,0,1,0,1,0,0,1,0,1,0,0,0],
+  [0,0,0,1,0,1,0,0,1,0,1,0,0,0]
+];
+const LEGS_WALK=[
+  [[0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+   [0,0,1,0,0,1,0,0,1,0,0,1,0,0]],
+  [[0,0,0,1,0,1,0,0,1,0,1,0,0,0],
+   [0,0,0,1,0,1,0,0,1,0,1,0,0,0]]
+];
+const EL={x:4,y:1},ER={x:9,y:1};
+const EYES={forward:{dl:0,dr:0,dy:0},right:{dl:1,dr:1,dy:0},left:{dl:-1,dr:-1,dy:0},down:{dl:0,dr:0,dy:1},blink:null,look_up:{dl:0,dr:0,dy:-1}};
+const HEART=[[1,0,1],[1,1,1],[0,1,0]];
+const STARS=[
+  [4,3,0],[14,2,0],[27,1,0],[31,3,1],[6,7,0],[19,5,2],[24,6,1],
+  [9,10,0],[2,13,0],[33,8,0],[29,12,0],[7,16,1],[3,20,0],[30,18,1],
+  [1,25,0],[33,24,0],[5,30,2],[28,28,1],[15,9,2],[21,14,1]
+];
+
+// 14×8 two-tier cake: 1=cakeBody, 2=cakeLight(frost), 3=cakeDark(brim)
+const CAKE=[
+  [0,0,0,0,2,2,1,1,2,2,0,0,0,0],
+  [0,0,0,2,1,1,1,1,1,1,2,0,0,0],
+  [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,0,2,2,1,2,2,1,2,2,1,2,0,0],
+  [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+];
+const CAKE_PAL={1:P.cakeBody,2:P.cakeLight,3:P.cakeDark};
+
+// 3×3 flame frames
+const FLAMES=[
+  [[0,1,0],[1,2,1],[0,1,0]],
+  [[0,1,0],[1,2,0],[0,1,1]],
+  [[0,1,0],[0,2,1],[1,1,0]]
+];
+const FLAME_PAL={1:P.flameO,2:P.flameY};
+
+function drawBg(){
+  ctx.fillStyle=P.bg;ctx.fillRect(0,0,720,720);
+  for(let y=1;y<GH;y+=2)for(let x=1;x<GW;x+=2){
+    ctx.fillStyle=P.dot;ctx.beginPath();ctx.arc(x*PX+10,y*PX+10,2,0,6.28);ctx.fill();
+  }
+}
+function drawStars(f){
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const[x,y,t]of STARS){
+    const tw=Math.sin(f*.08+x*.5+y*.3);
+    ctx.fillStyle=t===0?(tw>0?P.sd:P.sm):t===1?(tw>.3?P.sm:P.sl):(tw>0?P.sl:P.dot);
+    ctx.font=`bold ${t===0?14:10}px serif`;
+    ctx.fillText('✳',x*PX+10,y*PX+10);
+  }
+}
+function drawClawd(ox,oy,eyes,walkFrame){
+  const wf=walkFrame>=0?walkFrame%2:-1;
+  // Body rows 0-5
+  for(let r=0;r<6;r++)for(let c=0;c<BODY[r].length;c++)if(BODY[r][c])px(ox+c,oy+r,P.body);
+  // Legs rows 6-7
+  if(wf>=0){
+    const legs=LEGS_WALK[wf];
+    for(let r=0;r<2;r++)for(let c=0;c<legs[r].length;c++)if(legs[r][c])px(ox+c,oy+6+r,P.body);
+  }else{
+    for(let r=6;r<8;r++)for(let c=0;c<BODY[r].length;c++)if(BODY[r][c])px(ox+c,oy+r,P.body);
+  }
+  // Eyes
+  const e=EYES[eyes];
+  if(e){px(ox+EL.x+e.dl,oy+EL.y+e.dy,P.eye);px(ox+ER.x+e.dr,oy+ER.y+e.dy,P.eye)}
+}
+function drawBlush(ox,oy,a){ctx.globalAlpha=a;px(ox+3,oy+2,P.blush);px(ox+10,oy+2,P.blush);ctx.globalAlpha=1}
+function drawHeart(hx,hy,c){for(let r=0;r<3;r++)for(let i=0;i<3;i++)if(HEART[r][i])px(hx+i,hy+r,c)}
+
+function drawCake(ox,oy,f){
+  for(let r=0;r<CAKE.length;r++)for(let c=0;c<CAKE[r].length;c++){
+    const v=CAKE[r][c];if(v)px(ox+c,oy+r,CAKE_PAL[v]);
+  }
+  // Candle at center (col 7)
+  const candleX=ox+7;
+  for(let i=0;i<3;i++)px(candleX,oy-3+i,P.candle);
+  // Flame 3×3 flickering
+  const fi=Math.floor(f/5)%FLAMES.length;
+  const flame=FLAMES[fi];
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const v=flame[r][c];if(v)px(candleX-1+c,oy-6+r,FLAME_PAL[v]);
+  }
+}
+
+// Sparkle particles using ✳
+let particles=[];
+function addSparkle(x,y,col){particles.push({x,y,vx:(Math.random()-.5)*.6,vy:-Math.random()*.5-.2,life:1,col})}
+function tickParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.02;p.life-=.025;
+    if(p.life<=0){particles.splice(i,1);continue}
+    if(p.life>.1){
+      ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+      ctx.font=`bold ${Math.round(8+p.life*6)}px serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('✳',Math.round(p.x)*PX+PX/2,Math.round(p.y)*PX+PX/2);
+      ctx.globalAlpha=1;
+    }
+  }
+}
+
+function easeOut(t){return 1-Math.pow(1-t,3)}
+function easeInOut(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function lerp(a,b,t){return a+(b-a)*t}
+function easeOutBounce(t){
+  if(t<1/2.75)return 7.5625*t*t;
+  if(t<2/2.75){t-=1.5/2.75;return 7.5625*t*t+.75;}
+  if(t<2.5/2.75){t-=2.25/2.75;return 7.5625*t*t+.9375;}
+  t-=2.625/2.75;return 7.5625*t*t+.984375;
+}
+
+// ═══ YOUR ANIMATION HERE ════════════════════════════
+const FPS=30,DUR=5,TOTAL=FPS*DUR;
+const CX=11,CY=18;
+
+function getPhase(t){
+  if(t<0.12)return{ph:'enter',pt:t/.12};
+  if(t<0.22)return{ph:'idle',pt:(t-.12)/.1};
+  if(t<0.34)return{ph:'cake_drop',pt:(t-.22)/.12};
+  if(t<0.90)return{ph:'dance',pt:(t-.34)/.56};
+  return{ph:'celebrate',pt:(t-.90)/.1};
+}
+
+function render(f){
+  const t=f/TOTAL,{ph,pt}=getPhase(t);
+  drawBg();drawStars(f);
+
+  let cx=CX,bounce=0,eyes='forward',walkFrame=-1;
+  let showCake=false,cakeOffsetY=0;
+
+  switch(ph){
+    case'enter':
+      cx=Math.round(lerp(-14,CX,easeOut(pt)));
+      bounce=f%10<5?-1:0;
+      walkFrame=Math.floor(f/5)%2;
+      break;
+    case'idle':
+      eyes=pt>.3?'look_up':'forward';
+      break;
+    case'cake_drop':
+      eyes=pt<.7?'look_up':'forward';
+      showCake=true;
+      cakeOffsetY=Math.round(lerp(-20,0,easeOutBounce(pt)));
+      if(pt>.85)bounce=-1;
+      break;
+    case'dance':
+      showCake=true;
+      bounce=f%16<8?-1:0;
+      walkFrame=f%16<8?0:1;
+      eyes=Math.sin(f*.3)>.85?'blink':'forward';
+      if(f%12===0){addSparkle(cx+2,CY-2,P.sd);addSparkle(cx+12,CY-3,P.sm);}
+      break;
+    case'celebrate':
+      showCake=true;
+      bounce=f%10<5?-2:0;
+      walkFrame=Math.floor(f/4)%2;
+      eyes=Math.sin(f*.5)>.6?'blink':'forward';
+      if(f%4===0){
+        addSparkle(cx+Math.random()*14,CY-4-Math.random()*6,P.cakeLight);
+        addSparkle(cx+Math.random()*14,CY-2-Math.random()*4,P.sd);
+      }
+      break;
+  }
+
+  // Clawd body
+  drawClawd(cx,CY+bounce,eyes,walkFrame);
+
+  // Cake sits on head (brim at CY+bounce-1, top at CY+bounce-8)
+  if(showCake){
+    const cakeY=CY+bounce-8+cakeOffsetY;
+    drawCake(cx,cakeY,f);
+  }
+
+  tickParticles();
+}
+// ═══ LOOP (do not modify) ═══════════════════════════
+let st=null;
+function loop(ts){
+  if(!st)st=ts;const el=(ts-st)/1000,lt=el%DUR,f=Math.floor(lt*FPS);
+  if(lt<.05)particles=[];render(f);
+  document.getElementById('info').textContent=`小螃蟹过生日 — ${(f/FPS).toFixed(1)}s / ${DUR}.0s`;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
