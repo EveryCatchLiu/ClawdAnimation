@@ -1,35 +1,61 @@
-# Clawd Animation Skill
+# Clawd Animation Gallery
 
 > **本项目来自 [mmguo.dev/clawd](https://mmguo.dev/clawd/)**
 
-Clawd 像素风动画项目 — 用于生成以 Claude Code 吉祥物 Clawd（像素风小螃蟹）为主角的自包含 HTML 动画。
+Clawd 是 Claude Code 的官方吉祥物——一只像素风的小螃蟹。这个项目包含一系列独立的 HTML 像素动画文件，展示 Clawd 在各种场景中的可爱动作。
 
-**首次提交时间**: 2026 年 3 月 31 日
+## 动画列表
 
-## 这个项目是干嘛的
+| 文件 | 场景 |
+|------|------|
+| `clawd-desk-work.html` | Clawd 在电脑前工作，灵感来时灯泡亮起 |
+| `clawd-fishing.html` | Clawd 站在岸边用直鱼竿钓鱼 |
+| `clawd-beach-walk.html` | Clawd 在沙滩上散步 |
+| `clawd-bedtime.html` | Clawd 准备睡觉 |
+| `clawd-birthday.html` | Clawd 庆祝生日 |
+| `clawd-coconut-sip.html` | Clawd 喝椰子水 |
+| `clawd-guitar.html` | Clawd 弹吉他 |
+| `clawd-icecream.html` | Clawd 吃冰淇淋 |
+| `clawd-kiss.html` | Clawd 送飞吻 |
+| `clawd-lilypad.html` | Clawd 躺在睡莲上 |
+| `clawd-treasure.html` | Clawd 挖宝箱 |
+| `clawd-volleyball.html` | Clawd 打排球 |
+| `gallery.html` | 合集展示页，所有动画同时播放 |
 
-这是一套 Claude Code 的自定义 Skill（技能），让 Claude Code 可以根据自然语言描述，自动生成 Clawd 小螃蟹的像素风动画。比如你说"clawd 吃冰淇淋"，它就会生成一个完整的、可以在浏览器直接打开的 HTML 动画文件。
+## 使用方式
 
-包含两个版本：
-- **clawd-animation** — 完整版，支持 4-8 秒的多阶段叙事动画（吃东西、撑伞、收信等）
-- **clawd-animation-lite** — 轻量版，1-3 秒的快速动画（害羞、蹦跳、打招呼等），生成更快、消耗 token 更少
+每个 HTML 文件是自包含的（零外部依赖），直接在浏览器中打开即可观看动画。
+
+```sh
+open clawd-fishing.html
+```
+
+或打开 `gallery.html` 一次性浏览全部动画。
+
+## 技术特点
+
+- 纯 HTML/CSS/JavaScript，单文件自包含
+- 像素风渲染（`image-rendering: pixelated`）
+- Canvas 驱动，requestAnimationFrame 循环
+- 5 秒循环动画，带缓动函数和粒子系统
+- Clawd 造型：14×8 像素格，珊瑚橙 #CD6E58，扁平宽体
 
 ## 项目结构
 
 ```
-clawd-animation-skill/
-├── clawd-animation/
-│   ├── SKILL.md              # 完整版 Skill 定义（动画规范、工作流程、设计规则）
-│   └── references/
-│       ├── template.html      # 动画引擎模板（所有动画基于此生成）
-│       ├── ice-cream.html     # 参考范例：clawd 吃冰淇淋（5秒9阶段）
-│       └── clawd-kiss.html    # 参考范例：用腮红和爱心表达情绪
-├── clawd-animation-lite/
-│   └── SKILL.md              # 轻量版 Skill 定义（内嵌精简模板）
-├── .gitignore
+clawd-animation/
+├── clawd-beach-walk.html
+├── clawd-bedtime.html
+├── clawd-birthday.html
+├── clawd-coconut-sip.html
+├── clawd-desk-work.html
+├── clawd-fishing.html
+├── clawd-guitar.html
+├── clawd-icecream.html
+├── clawd-kiss.html
+├── clawd-lilypad.html
+├── clawd-treasure.html
+├── clawd-volleyball.html
+├── gallery.html
 └── README.md
 ```
-
-## 怎么用
-
-将 `clawd-animation/` 或 `clawd-animation-lite/` 文件夹放到 Claude Code 的 skill 目录中，然后在对话中描述你想要的动画场景即可。
