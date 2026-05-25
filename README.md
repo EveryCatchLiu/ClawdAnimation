@@ -1,5 +1,7 @@
 # Clawd Animation Skill
 
+> **本项目来自 [mmguo.dev/clawd](https://mmguo.dev/clawd/)**
+
 Clawd 像素风动画项目 — 用于生成以 Claude Code 吉祥物 Clawd（像素风小螃蟹）为主角的自包含 HTML 动画。
 
 **首次提交时间**: 2026 年 3 月 31 日
